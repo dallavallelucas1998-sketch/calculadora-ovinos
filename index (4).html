@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#17452f">
+<title>Calculadora de Ovinos - Campo</title>
+<style>
+:root{--green:#17452f;--light:#edf4ee;--ink:#17231b;--muted:#647268;--line:#dce5dd}
+*{box-sizing:border-box}body{margin:0;background:#f3f6f3;color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:var(--green);color:white;padding:22px 18px 20px}header h1{font-size:22px;margin:0 0 4px}header p{margin:0;color:#e1eee4;font-size:13px}
+main{max-width:760px;margin:auto;padding:14px}
+.card{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;margin:0 0 13px;box-shadow:0 2px 9px #183a2410}
+h2{font-size:17px;margin:0 0 12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{min-width:0}.field.full{grid-column:1/-1}label{display:block;font-size:13px;font-weight:650;margin:0 0 5px;color:#34463a}
+input,select,textarea{width:100%;min-height:48px;border:1px solid #cbd8ce;border-radius:10px;padding:10px 11px;font:inherit;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:3px solid #b8d7c0;border-color:var(--green)}
+input[type=file]{padding:8px;font-size:13px}
+.hint{font-size:12px;color:var(--muted);margin:6px 0 0}
+.results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.result{background:var(--light);border-radius:12px;padding:12px;min-width:0}
+.result span{display:block;font-size:12px;color:#506357}.result strong{display:block;font-size:19px;margin-top:4px;overflow-wrap:anywhere}
+.result.big{grid-column:1/-1;background:#e1efe3}.result.big strong{font-size:26px;color:var(--green)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+button{border:0;border-radius:12px;min-height:50px;padding:12px 14px;font:700 15px system-ui;cursor:pointer}
+.primary{background:var(--green);color:white}.secondary{background:#e5ece6;color:#203c2a}
+.photo-preview{display:none;max-width:100%;max-height:260px;object-fit:contain;border-radius:12px;margin-top:10px;border:1px solid var(--line)}
+.note{font-size:12px;color:var(--muted)}
+#relatorio{display:none}
+@media(max-width:430px){main{padding:10px}.card{padding:14px}.grid{gap:10px}.result strong{font-size:17px}}
+@media print{
+ @page{size:A4;margin:12mm}
+ body{background:#fff;font-size:12px}header{background:#fff!important;color:#111;padding:0 0 12px;border-bottom:2px solid #17452f}
+ header p{color:#444}.no-print{display:none!important}main{max-width:none;padding:10px 0}
+ .card{box-shadow:none;border:1px solid #bbb;border-radius:8px;padding:11px;margin-bottom:9px;break-inside:avoid}
+ h2{font-size:14px}.result{background:#f0f4f0!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ .result strong{font-size:15px}.result.big strong{font-size:20px}
+ #relatorio{display:block}#fotoRelatorio{display:block;max-width:100%;max-height:220px;margin:8px auto;object-fit:contain}
+ input{border:0;padding:0;min-height:0}label{margin-bottom:2px}
+}
+</style>
+</head>
+<body>
+<header><h1>Calculadora de Ovinos</h1><p>Ferramenta simples para usar a campo · cálculos imediatos · sem cadastro e sem histórico</p></header>
+<main>
+<section class="card">
+<h2>1. Dados do lote / compra</h2>
+<div class="grid">
+<div class="field"><label for="quantidade">Quantidade de animais</label><input id="quantidade" type="number" min="1" step="1" inputmode="numeric" placeholder="Ex.: 12"></div>
+<div class="field"><label for="peso">Peso total vivo (kg)</label><input id="peso" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 540"></div>
+<div class="field"><label for="precoKg">Preço por kg vivo (R$)</label><input id="precoKg" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 12,50"></div>
+<div class="field"><label for="frete">Frete / despesas (R$)</label><input id="frete" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></div>
+<div class="field"><label for="rendimento">Rendimento de carcaça (%)</label><input id="rendimento" type="number" min="0" max="100" step="0.1" inputmode="decimal" value="45"></div>
+<div class="field"><label for="precoCarcaca">Preço de venda por kg carcaça (R$)</label><input id="precoCarcaca" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Opcional"></div>
+</div>
+<p class="hint">Use vírgula ou ponto nos decimais. O rendimento de carcaça é uma estimativa: ajuste conforme seus animais e padrão de abate.</p>
+</section>
+<section class="card">
+<h2>2. Resultado do cálculo</h2>
+<div class="results" aria-live="polite">
+<div class="result big"><span>Valor dos animais (peso × preço/kg)</span><strong id="valorAnimais">R$ 0,00</strong></div>
+<div class="result"><span>Peso médio por animal</span><strong id="pesoMedio">—</strong></div>
+<div class="result"><span>Preço médio por animal</span><strong id="precoMedio">—</strong></div>
+<div class="result"><span>Peso estimado de carcaça</span><strong id="carcaca">—</strong></div>
+<div class="result"><span>Custo total com despesas</span><strong id="custoTotal">R$ 0,00</strong></div>
+<div class="result"><span>Custo por kg de carcaça</span><strong id="custoKg">—</strong></div>
+<div class="result"><span>Receita estimada de venda</span><strong id="receita">—</strong></div>
+<div class="result"><span>Margem estimada</span><strong id="margem">—</strong></div>
+</div>
+</section>
+<section class="card">
+<h2>3. Ganho médio diário (GMD)</h2>
+<div class="grid">
+<div class="field"><label for="pesoAnterior">Peso da pesagem anterior (kg)</label><input id="pesoAnterior" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 28"></div>
+<div class="field"><label for="dataAnterior">Data da pesagem anterior</label><input id="dataAnterior" type="date"></div>
+<div class="field"><label for="pesoAtual">Peso atual (kg)</label><input id="pesoAtual" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Ex.: 34"></div>
+<div class="field"><label for="dataAtual">Data da pesagem atual</label><input id="dataAtual" type="date"></div>
+</div>
+<div class="results" style="margin-top:12px">
+<div class="result"><span>GMD</span><strong id="gmd">—</strong></div>
+<div class="result"><span>Variação de peso / intervalo</span><strong id="variacao">—</strong></div>
+</div>
+</section>
+<section class="card">
+<h2>4. Foto e identificação (opcional)</h2>
+<div class="grid">
+<div class="field full"><label for="identificacao">Identificação do lote / animal / observações</label><textarea id="identificacao" rows="2" placeholder="Ex.: Lote 03, propriedade, brinco..."></textarea></div>
+<div class="field full"><label for="foto">Adicionar foto</label><input id="foto" type="file" accept="image/*" capture="environment"><p class="hint">A foto será incluída no relatório para impressão. Não é enviada para nenhum servidor.</p><img id="fotoPreview" class="photo-preview" alt="Prévia da foto escolhida"></div>
+</div>
+</section>
+<div class="actions no-print">
+<button class="primary" id="imprimir">Gerar relatório / Imprimir</button>
+<button class="secondary" id="limpar">Limpar campos</button>
+</div>
+<p class="note no-print">A calculadora não salva dados nem cria histórico. Para guardar o resultado, use “Gerar relatório / Imprimir” e escolha “Salvar como PDF” ou uma impressora.</p>
+<section id="relatorio">
+<h2>Relatório de cálculo - Ovinos</h2>
+<p id="textoIdentificacao"></p>
+<img id="fotoRelatorio" alt="Foto do lote">
+<p id="dataRelatorio"></p>
+</section>
+</main>
+<script>
+(function(){
+'use strict';
+const ids=['quantidade','peso','precoKg','frete','rendimento','precoCarcaca','pesoAnterior','dataAnterior','pesoAtual','dataAtual'];
+const el=id=>document.getElementById(id);
+const val=id=>{const raw=String(el(id).value||'').trim().replace(',','.');if(raw==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null;};
+const fmt=(n)=>Number.isFinite(n)?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—';
+const fmtKg=(n)=>Number.isFinite(n)?n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' kg':'—';
+const set=(id,v)=>{el(id).textContent=v;};
+function calculate(){
+ const q=val('quantidade'),w=val('peso'),price=val('precoKg'),freight=val('frete')??0,yieldPct=val('rendimento'),sale=val('precoCarcaca');
+ const validQ=q!==null&&Number.isInteger(q)&&q>0, validW=w!==null&&w>=0, validPrice=price!==null&&price>=0;
+ const animalValue=validW&&validPrice?w*price:NaN;
+ const cost=Number.isFinite(animalValue)&&freight>=0?animalValue+freight:NaN;
+ const carc=validW&&yieldPct!==null&&yieldPct>=0&&yieldPct<=100?w*yieldPct/100:NaN;
+ set('valorAnimais',fmt(animalValue));
+ set('pesoMedio',validQ&&validW?fmtKg(w/q):'—');
+ set('precoMedio',validQ&&Number.isFinite(animalValue)?fmt(animalValue/q):'—');
+ set('carcaca',fmtKg(carc));
+ set('custoTotal',fmt(cost));
+ set('custoKg',Number.isFinite(cost)&&Number.isFinite(carc)&&carc>0?fmt(cost/carc):'—');
+ const revenue=Number.isFinite(carc)&&sale!==null&&sale>=0?carc*sale:NaN;
+ set('receita',fmt(revenue));
+ set('margem',Number.isFinite(revenue)&&Number.isFinite(cost)?fmt(revenue-cost):'—');
+ // GMD is calculated independently of the purchase section.
+ const oldW=val('pesoAnterior'),newW=val('pesoAtual'),oldD=el('dataAnterior').value,newD=el('dataAtual').value;
+ if(oldW===null||newW===null||!oldD||!newD){set('gmd','—');set('variacao','—');}
+ else{
+   const days=Math.round((Date.parse(newD+'T12:00:00')-Date.parse(oldD+'T12:00:00'))/86400000);
+   if(days<=0||oldW<0||newW<0){set('gmd','Confira pesos e datas');set('variacao','—');}
+   else{const change=newW-oldW;set('gmd',(change/days*1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+' g/dia');set('variacao',(change>0?'+':'')+fmtKg(change)+' em '+days+' dias');}
+ }
+ return {animalValue,cost,carc,revenue};
+}
+ids.forEach(id=>el(id).addEventListener('input',calculate));
+el('foto').addEventListener('change',()=>{
+ const file=el('foto').files&&el('foto').files[0], img=el('fotoPreview');
+ if(!file){img.removeAttribute('src');img.style.display='none';return;}
+ if(!file.type.startsWith('image/')){alert('Selecione um arquivo de imagem.');el('foto').value='';return;}
+ const reader=new FileReader();
+ reader.onload=()=>{img.src=reader.result;img.style.display='block';};
+ reader.onerror=()=>alert('Não foi possível abrir essa imagem. Tente outra foto.');
+ reader.readAsDataURL(file);
+});
+el('imprimir').addEventListener('click',()=>{
+ calculate();
+ const info=el('identificacao').value.trim();
+ el('textoIdentificacao').textContent=info?'Identificação / observações: '+info:'Identificação: não informada';
+ el('dataRelatorio').textContent='Emitido em '+new Date().toLocaleString('pt-BR');
+ const preview=el('fotoPreview');
+ if(preview.src&&preview.style.display!=='none'){el('fotoRelatorio').src=preview.src;el('fotoRelatorio').style.display='block';}
+ else{el('fotoRelatorio').removeAttribute('src');el('fotoRelatorio').style.display='none';}
+ window.print();
+});
+el('limpar').addEventListener('click',()=>{
+ ids.forEach(id=>el(id).value='');
+ el('rendimento').value='45';el('identificacao').value='';el('foto').value='';
+ el('fotoPreview').removeAttribute('src');el('fotoPreview').style.display='none';calculate();
+ window.scrollTo({top:0,behavior:'smooth'});
+});
+calculate();
+})();
+</script>
+</body></html>
